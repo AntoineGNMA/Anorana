@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#080810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FitMotion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --bg2: #0f0f1a;
+    --bg3: #161625;
+    --bg4: #1e1e30;
+    --card: #12121e;
+    --border: rgba(255,255,255,0.07);
+    --violet: #7c5cfc;
+    --violet-light: #9b7ffe;
+    --violet-dim: rgba(124,92,252,0.15);
+    --blue: #4f9cf9;
+    --blue-dim: rgba(79,156,249,0.15);
+    --cyan: #00e5cc;
+    --cyan-dim: rgba(0,229,204,0.12);
+    --orange: #ff7849;
+    --orange-dim: rgba(255,120,73,0.15);
+    --green: #2dd4a0;
+    --green-dim: rgba(45,212,160,0.12);
+    --red: #ff5252;
+    --text: #e8e8f0;
+    --text2: #8888a8;
+    --text3: #555570;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --nav-h: 72px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height:100%; overflow:hidden; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+
+  #app { height:100vh; display:flex; flex-direction:column; max-width:430px; margin:0 auto; position:relative; overflow:hidden; }
+
+  /* SCREENS */
+  .screen { display:none; flex-direction:column; flex:1; overflow-y:auto; overflow-x:hidden; padding-bottom: calc(var(--nav-h) + 16px); }
+  .screen.active { display:flex; }
+  .screen::-webkit-scrollbar { display:none; }
+
+  /* SCROLLABLE CONTENT AREA */
+  .scroll-content { flex:1; overflow-y:auto; padding: 0 16px 16px; }
+  .scroll-content::-webkit-scrollbar { display:none; }
+
+  /* HEADER */
+  .screen-header { padding: 52px 20px 16px; flex-shrink:0; }
+  .screen-title { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; letter-spacing:-0.5px; }
+  .screen-subtitle { font-size:13px; color:var(--text2); margin-top:3px; }
+
+  /* BOTTOM NAV */
+  #bottom-nav {
+    position:absolute; bottom:0; left:0; right:0; height:var(--nav-h);
+    background: rgba(12,12,22,0.95); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-around;
+    padding: 0 8px 8px; z-index:100;
+  }
+  .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 12px; cursor:pointer; border-radius:12px; transition: all 0.2s; flex:1; }
+  .nav-item.active .nav-icon { color: var(--violet); }
+  .nav-item.active .nav-label { color: var(--violet); }
+  .nav-icon { font-size:22px; transition:0.2s; color: var(--text3); }
+  .nav-label { font-size:10px; font-weight:500; color: var(--text3); transition:0.2s; }
+
+  /* CARDS */
+  .card { background: var(--card); border-radius:var(--radius); border:1px solid var(--border); padding:16px; }
+  .card + .card { margin-top:12px; }
+
+  /* METRICS ROW */
+  .metrics-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin: 16px 16px 0; }
+  .metric-card { background:var(--card); border-radius:var(--radius); border:1px solid var(--border); padding:14px; }
+  .metric-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.8px; font-weight:500; }
+  .metric-value { font-family:'Syne',sans-serif; font-size:24px; font-weight:700; margin-top:4px; line-height:1; }
+  .metric-unit { font-size:12px; font-weight:400; color:var(--text2); margin-left:2px; }
+
+  /* BIG RING */
+  .ring-container { display:flex; align-items:center; justify-content:center; padding:20px 16px 0; }
+  .ring-wrap { position:relative; width:180px; height:180px; }
+  .ring-svg { transform:rotate(-90deg); }
+  .ring-bg { fill:none; stroke: var(--bg4); stroke-width:14; }
+  .ring-prog { fill:none; stroke-width:14; stroke-linecap:round; transition:stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1); }
+  .ring-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+  .ring-pct { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; }
+  .ring-lbl { font-size:11px; color:var(--text2); margin-top:2px; }
+
+  /* ACTIVITY LIST */
+  .activity-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-icon-wrap { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .activity-info { flex:1; min-width:0; }
+  .activity-name { font-weight:600; font-size:14px; }
+  .activity-meta { font-size:12px; color:var(--text2); margin-top:2px; }
+  .activity-cal { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--orange); }
+
+  /* FORM */
+  .form-group { margin-bottom:16px; }
+  .form-label { font-size:12px; font-weight:500; color:var(--text2); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:8px; display:block; }
+  .form-input, .form-select, .form-textarea {
+    width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm);
+    color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; padding:13px 14px;
+    outline:none; transition:border-color 0.2s; -webkit-appearance:none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--violet); }
+  .form-textarea { resize:none; min-height:80px; }
+  .form-select option { background: #1e1e30; }
+
+  /* TYPE GRID */
+  .type-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .type-btn { background:var(--bg3); border:1.5px solid var(--border); border-radius:10px; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; transition:all 0.2s; }
+  .type-btn.selected { border-color:var(--violet); background:var(--violet-dim); }
+  .type-btn .t-icon { font-size:22px; }
+  .type-btn .t-label { font-size:10px; font-weight:500; color:var(--text2); text-align:center; }
+  .type-btn.selected .t-label { color:var(--violet-light); }
+
+  /* INTENSITY */
+  .intensity-row { display:flex; gap:8px; }
+  .int-btn { flex:1; padding:10px; background:var(--bg3); border:1.5px solid var(--border); border-radius:var(--radius-sm); text-align:center; cursor:pointer; font-size:13px; font-weight:500; color:var(--text2); transition:all 0.2s; }
+  .int-btn.selected { border-color:var(--orange); background:var(--orange-dim); color:var(--orange); }
+
+  /* CTA BUTTON */
+  .btn-primary { width:100%; padding:16px; background:linear-gradient(135deg, var(--violet), var(--blue)); border:none; border-radius:var(--radius); color:#fff; font-family:'Syne',sans-serif; font-size:16px; font-weight:700; cursor:pointer; letter-spacing:0.3px; transition: opacity 0.2s, transform 0.1s; }
+  .btn-primary:active { transform: scale(0.98); opacity:0.9; }
+  .btn-ghost { width:100%; padding:14px; background:transparent; border:1.5px solid var(--border); border-radius:var(--radius); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+  .btn-ghost:active { background:var(--bg3); }
+
+  /* TIMER */
+  .timer-screen { display:flex; flex-direction:column; align-items:center; }
+  .timer-ring-wrap { position:relative; width:240px; height:240px; margin:24px auto; }
+  .timer-ring-bg { fill:none; stroke:var(--bg4); stroke-width:12; }
+  .timer-ring-prog { fill:none; stroke:var(--cyan); stroke-width:12; stroke-linecap:round; transition: stroke-dashoffset 0.5s linear; }
+  .timer-display { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+  .timer-time { font-family:'Syne',sans-serif; font-size:48px; font-weight:800; letter-spacing:-2px; }
+  .timer-status { font-size:13px; color:var(--text2); margin-top:4px; }
+  .timer-controls { display:flex; gap:16px; margin-top:8px; width:100%; padding:0 32px; }
+  .timer-btn { flex:1; padding:16px; border-radius:var(--radius); border:none; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .timer-btn-start { background:var(--cyan); color:#080810; }
+  .timer-btn-pause { background:var(--orange); color:#fff; }
+  .timer-btn-reset { background:var(--bg3); border:1.5px solid var(--border); color:var(--text2); }
+  .timer-btn:active { transform:scale(0.97); }
+  .timer-preset-row { display:flex; gap:8px; margin:0 16px; }
+  .preset-btn { flex:1; padding:10px; background:var(--bg3); border:1.5px solid var(--border); border-radius:var(--radius-sm); text-align:center; font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; transition:all 0.2s; }
+  .preset-btn.active { border-color:var(--cyan); color:var(--cyan); background:var(--cyan-dim); }
+
+  /* HISTORY */
+  .history-filter-row { display:flex; gap:8px; overflow-x:auto; padding:0 16px 0; margin-bottom:4px; }
+  .history-filter-row::-webkit-scrollbar { display:none; }
+  .filter-chip { padding:7px 14px; background:var(--bg3); border:1.5px solid var(--border); border-radius:20px; font-size:12px; font-weight:500; white-space:nowrap; cursor:pointer; color:var(--text2); transition:all 0.2s; flex-shrink:0; }
+  .filter-chip.active { background:var(--violet-dim); border-color:var(--violet); color:var(--violet-light); }
+
+  /* WEEK BARS */
+  .week-chart { display:flex; align-items:flex-end; gap:6px; height:80px; padding:0 4px; }
+  .week-bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+  .week-bar { width:100%; border-radius:4px 4px 0 0; background: var(--violet-dim); min-height:4px; transition:height 0.6s cubic-bezier(.4,0,.2,1); position:relative; }
+  .week-bar.today { background:var(--violet); }
+  .week-bar-label { font-size:10px; color:var(--text3); }
+
+  /* SETTINGS */
+  .settings-section { margin-bottom:24px; }
+  .settings-title { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px; padding:0 4px; }
+  .settings-row { display:flex; align-items:center; justify-content:space-between; padding:14px; background:var(--card); border-radius:var(--radius-sm); border:1px solid var(--border); margin-bottom:8px; }
+  .settings-row-label { font-size:14px; font-weight:500; }
+  .settings-row-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+  .settings-input-inline { background:transparent; border:none; color:var(--violet-light); font-family:'Syne',sans-serif; font-size:16px; font-weight:700; text-align:right; width:80px; outline:none; }
+
+  /* BADGE */
+  .badge { padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+  .badge-violet { background:var(--violet-dim); color:var(--violet-light); }
+  .badge-orange { background:var(--orange-dim); color:var(--orange); }
+  .badge-green { background:var(--green-dim); color:var(--green); }
+  .badge-blue { background:var(--blue-dim); color:var(--blue); }
+
+  /* TOAST */
+  #toast { position:absolute; bottom:calc(var(--nav-h) + 16px); left:16px; right:16px; background:#1e1e30; border:1px solid var(--violet); border-radius:var(--radius-sm); padding:14px 16px; font-size:14px; font-weight:500; z-index:999; transform:translateY(20px); opacity:0; transition:all 0.3s; pointer-events:none; }
+  #toast.show { transform:translateY(0); opacity:1; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text3); }
+  .empty-icon { font-size:48px; margin-bottom:12px; }
+  .empty-text { font-size:14px; }
+
+  /* SECTION HEADER */
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .section-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; }
+  .section-action { font-size:12px; color:var(--violet-light); font-weight:500; cursor:pointer; }
+
+  /* TRIATHLON CARD */
+  .triathlon-card { background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(79,156,249,0.15)); border:1px solid rgba(124,92,252,0.3); border-radius:var(--radius); padding:16px; }
+  .tri-disciplines { display:flex; gap:10px; margin-top:12px; }
+  .tri-disc { flex:1; text-align:center; }
+  .tri-disc-icon { font-size:24px; margin-bottom:4px; }
+  .tri-disc-label { font-size:10px; color:var(--text2); font-weight:500; }
+  .tri-disc-val { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--violet-light); }
+
+  /* PULSE ANIMATION */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .pulsing { animation: pulse 1.5s ease-in-out infinite; }
+
+  /* SLIDE IN */
+  @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .slide-up { animation: slideUp 0.4s ease; }
+
+  /* PROFILE BIG */
+  .profile-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; padding:16px; background:var(--card); border-radius:var(--radius); border:1px solid var(--border); }
+  .profile-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--violet),var(--blue)); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:20px; font-weight:800; flex-shrink:0; }
+  .profile-name { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; }
+  .profile-stats { font-size:12px; color:var(--text2); margin-top:3px; }
+
+  /* SUGGESTION CARD */
+  .suggestion-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all 0.2s; }
+  .suggestion-card:active { background:var(--bg4); }
+  .sug-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+  .sug-body { flex:1; }
+  .sug-title { font-weight:600; font-size:14px; }
+  .sug-meta { font-size:12px; color:var(--text2); margin-top:2px; }
+  .sug-arrow { color:var(--text3); font-size:18px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="screen active" id="screen-dashboard">
+    <div class="screen-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="screen-title">Bonjour 👋</div>
+          <div class="screen-subtitle" id="dash-date">Lundi 24 mars</div>
+        </div>
+        <div style="background:var(--violet-dim);border:1px solid rgba(124,92,252,0.3);border-radius:12px;padding:8px 12px;text-align:center;">
+          <div style="font-size:10px;color:var(--text2);">IMC</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--violet-light);" id="bmi-val">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ring -->
+    <div class="ring-container">
+      <div class="ring-wrap">
+        <svg class="ring-svg" width="180" height="180" viewBox="0 0 180 180">
+          <circle class="ring-bg" cx="90" cy="90" r="76"/>
+          <circle class="ring-prog" cx="90" cy="90" r="76" id="dash-ring"
+            stroke="url(#ringGrad)"
+            stroke-dasharray="477.5"
+            stroke-dashoffset="477.5"/>
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#7c5cfc"/>
+              <stop offset="100%" stop-color="#4f9cf9"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-pct" id="dash-pct" style="background:linear-gradient(135deg,#7c5cfc,#4f9cf9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">0%</div>
+          <div class="ring-lbl">Objectif cal.</div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-top:4px;" id="dash-cal-val">0</div>
+          <div style="font-size:10px;color:var(--text2);" id="dash-cal-goal">/ 0 kcal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-label">Activités</div>
+        <div class="metric-value" id="dash-activities">0</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">aujourd'hui</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Durée totale</div>
+        <div class="metric-value" id="dash-duration">0<span class="metric-unit">min</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">aujourd'hui</div>
+      </div>
+    </div>
+
+    <div class="scroll-content" style="margin-top:16px;">
+
+      <!-- Week Chart -->
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">Cette semaine</div>
+          <div class="badge badge-violet" id="week-total-badge">0 kcal</div>
+        </div>
+        <div class="week-chart" id="week-chart"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span style="font-size:10px;color:var(--text3);" id="week-days-label"></span>
+        </div>
+      </div>
+
+      <!-- Triathlon Mode -->
+      <div class="triathlon-card" style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:18px;">🏅</span>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Mode Triathlon</div>
+            <div style="font-size:12px;color:var(--text2);">Progression semaine</div>
+          </div>
+        </div>
+        <div class="tri-disciplines">
+          <div class="tri-disc">
+            <div class="tri-disc-icon">🏊</div>
+            <div class="tri-disc-label">Natation</div>
+            <div class="tri-disc-val" id="tri-swim">0 min</div>
+          </div>
+          <div class="tri-disc">
+            <div class="tri-disc-icon">🚴</div>
+            <div class="tri-disc-label">Vélo</div>
+            <div class="tri-disc-val" id="tri-bike">0 min</div>
+          </div>
+          <div class="tri-disc">
+            <div class="tri-disc-icon">🏃</div>
+            <div class="tri-disc-label">Course</div>
+            <div class="tri-disc-val" id="tri-run">0 min</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Activities -->
+      <div style="margin-top:12px;">
+        <div class="section-header">
+          <div class="section-title">Séances du jour</div>
+          <div class="section-action" onclick="showScreen('add')">+ Ajouter</div>
+        </div>
+        <div class="card" id="today-activities">
+          <div class="empty-state">
+            <div class="empty-icon">💪</div>
+            <div class="empty-text">Aucune séance aujourd'hui<br>C'est l'heure de bouger !</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div style="margin-top:12px;">
+        <div class="section-header">
+          <div class="section-title">Suggestions du jour</div>
+        </div>
+        <div id="suggestions-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ ADD ACTIVITY ============ -->
+  <div class="screen" id="screen-add">
+    <div class="screen-header">
+      <div class="screen-title">Nouvelle séance</div>
+      <div class="screen-subtitle">Enregistrez votre activité</div>
+    </div>
+    <div class="scroll-content">
+
+      <div class="form-group">
+        <label class="form-label">Type d'activité</label>
+        <div class="type-grid" id="type-grid">
+          <div class="type-btn selected" data-type="course" onclick="selectType(this)"><span class="t-icon">🏃</span><span class="t-label">Course</span></div>
+          <div class="type-btn" data-type="velo" onclick="selectType(this)"><span class="t-icon">🚴</span><span class="t-label">Vélo</span></div>
+          <div class="type-btn" data-type="natation" onclick="selectType(this)"><span class="t-icon">🏊</span><span class="t-label">Natation</span></div>
+          <div class="type-btn" data-type="muscu" onclick="selectType(this)"><span class="t-icon">🏋️</span><span class="t-label">Muscu</span></div>
+          <div class="type-btn" data-type="pompes" onclick="selectType(this)"><span class="t-icon">💪</span><span class="t-label">Pompes</span></div>
+          <div class="type-btn" data-type="gainage" onclick="selectType(this)"><span class="t-icon">🧱</span><span class="t-label">Gainage</span></div>
+          <div class="type-btn" data-type="marche" onclick="selectType(this)"><span class="t-icon">🚶</span><span class="t-label">Marche</span></div>
+          <div class="type-btn" data-type="autre" onclick="selectType(this)"><span class="t-icon">⚡</span><span class="t-label">Autre</span></div>
+        </div>
+      </div>
+
+      <!-- Champs dynamiques selon le type sélectionné -->
+      <div id="dynamic-fields"></div>
+
+      <div class="form-group">
+        <label class="form-label">Intensité</label>
+        <div class="intensity-row">
+          <div class="int-btn" data-int="faible" onclick="selectIntensity(this)">Faible</div>
+          <div class="int-btn selected" data-int="moderee" onclick="selectIntensity(this)">Modérée</div>
+          <div class="int-btn" data-int="elevee" onclick="selectIntensity(this)">Élevée</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes <span style="color:var(--text3)">— optionnel</span></label>
+        <textarea class="form-textarea" id="input-notes" placeholder="Ressenti, conditions, PR..."></textarea>
+      </div>
+
+      <!-- Calorie Preview -->
+      <div class="card" style="margin-bottom:16px;border-color:rgba(124,92,252,0.3);">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Calories estimées</div>
+        <div style="display:flex;align-items:baseline;gap:6px;">
+          <span style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--orange);" id="cal-preview">--</span>
+          <span style="font-size:14px;color:var(--text2);">kcal</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="cal-formula">Saisissez durée + intensité</div>
+      </div>
+
+      <button class="btn-primary" onclick="saveActivity()">Enregistrer la séance 🏁</button>
+      <div style="height:12px;"></div>
+
+    </div>
+  </div>
+
+  <!-- ============ TIMER ============ -->
+  <div class="screen" id="screen-timer">
+    <div class="screen-header">
+      <div class="screen-title">Timer Gainage</div>
+      <div class="screen-subtitle">Maintenez la position !</div>
+    </div>
+
+    <div class="timer-preset-row">
+      <div class="preset-btn active" data-secs="60" onclick="setPreset(this)">1 min</div>
+      <div class="preset-btn" data-secs="90" onclick="setPreset(this)">1:30</div>
+      <div class="preset-btn" data-secs="120" onclick="setPreset(this)">2 min</div>
+      <div class="preset-btn" data-secs="180" onclick="setPreset(this)">3 min</div>
+      <div class="preset-btn" data-secs="300" onclick="setPreset(this)">5 min</div>
+    </div>
+
+    <div class="timer-screen" style="flex:1;padding:0 16px;">
+      <div class="timer-ring-wrap">
+        <svg width="240" height="240" viewBox="0 0 240 240" style="transform:rotate(-90deg)">
+          <circle class="timer-ring-bg" cx="120" cy="120" r="104"/>
+          <circle class="timer-ring-prog" cx="120" cy="120" r="104" id="timer-ring"
+            stroke-dasharray="653.5" stroke-dashoffset="653.5"/>
+        </svg>
+        <div class="timer-display">
+          <div class="timer-time" id="timer-display">01:00</div>
+          <div class="timer-status" id="timer-status">Prêt</div>
+        </div>
+      </div>
+
+      <div class="timer-controls">
+        <button class="timer-btn timer-btn-reset" id="btn-reset" onclick="resetTimer()">Reset</button>
+        <button class="timer-btn timer-btn-start" id="btn-start-pause" onclick="toggleTimer()">Démarrer</button>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;width:100%;">
+        <div class="metric-card">
+          <div class="metric-label">Meilleur</div>
+          <div class="metric-value" id="timer-best">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Séances</div>
+          <div class="metric-value" id="timer-count">0</div>
+        </div>
+      </div>
+
+      <!-- Session log -->
+      <div style="margin-top:16px;width:100%;">
+        <div class="section-title" style="margin-bottom:8px;">Sessions récentes</div>
+        <div id="timer-log" style="font-size:13px;color:var(--text2);">Aucune session enregistrée</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HISTORY ============ -->
+  <div class="screen" id="screen-history">
+    <div class="screen-header">
+      <div class="screen-title">Historique</div>
+      <div class="screen-subtitle">Toutes vos séances</div>
+    </div>
+
+    <div class="history-filter-row" id="filter-row">
+      <div class="filter-chip active" data-filter="all" onclick="filterHistory(this)">Tout</div>
+      <div class="filter-chip" data-filter="course" onclick="filterHistory(this)">🏃 Course</div>
+      <div class="filter-chip" data-filter="velo" onclick="filterHistory(this)">🚴 Vélo</div>
+      <div class="filter-chip" data-filter="natation" onclick="filterHistory(this)">🏊 Natation</div>
+      <div class="filter-chip" data-filter="muscu" onclick="filterHistory(this)">🏋️ Muscu</div>
+      <div class="filter-chip" data-filter="pompes" onclick="filterHistory(this)">💪 Pompes</div>
+      <div class="filter-chip" data-filter="gainage" onclick="filterHistory(this)">🧱 Gainage</div>
+    </div>
+
+    <div class="scroll-content" style="margin-top:12px;">
+      <!-- Stats totaux -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div class="metric-card" style="padding:12px;">
+          <div class="metric-label" style="font-size:10px;">Total cal.</div>
+          <div class="metric-value" style="font-size:18px;" id="hist-total-cal">0</div>
+        </div>
+        <div class="metric-card" style="padding:12px;">
+          <div class="metric-label" style="font-size:10px;">Séances</div>
+          <div class="metric-value" style="font-size:18px;" id="hist-total-sessions">0</div>
+        </div>
+        <div class="metric-card" style="padding:12px;">
+          <div class="metric-label" style="font-size:10px;">Minutes</div>
+          <div class="metric-value" style="font-size:18px;" id="hist-total-min">0</div>
+        </div>
+      </div>
+
+      <div id="history-list">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-text">Aucune activité enregistrée<br>Commencez à bouger !</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-header">
+      <div class="screen-title">Profil & Paramètres</div>
+    </div>
+    <div class="scroll-content">
+
+      <div class="profile-header">
+        <div class="profile-avatar">FM</div>
+        <div>
+          <div class="profile-name">FitMotion User</div>
+          <div class="profile-stats" id="profile-stats-line">-- | -- cm | IMC --</div>
+          <div style="margin-top:6px;"><span class="badge badge-violet">🏅 Triathlete</span></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Profil physique</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Poids</div><div class="settings-row-sub">kg</div></div>
+          <input type="number" class="settings-input-inline" id="set-poids" value="101" onchange="saveSettings()">
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Taille</div><div class="settings-row-sub">cm</div></div>
+          <input type="number" class="settings-input-inline" id="set-taille" value="188" onchange="saveSettings()">
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Âge</div><div class="settings-row-sub">ans</div></div>
+          <input type="number" class="settings-input-inline" id="set-age" value="30" onchange="saveSettings()">
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Objectifs</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Objectif calories/jour</div><div class="settings-row-sub">kcal à brûler</div></div>
+          <input type="number" class="settings-input-inline" id="set-goal-cal" value="600" onchange="saveSettings()">
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Déplacement quotidien</div><div class="settings-row-sub">km/jour (vélo/marche)</div></div>
+          <input type="number" class="settings-input-inline" id="set-depl" value="20" onchange="saveSettings()">
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">À propos</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">FitMotion</div><div class="settings-row-sub">Version 1.0 — PWA</div></div>
+          <span style="font-size:18px;">💜</span>
+        </div>
+        <div class="settings-row" onclick="clearAllData()" style="cursor:pointer;">
+          <div><div class="settings-row-label" style="color:var(--red);">Effacer toutes les données</div><div class="settings-row-sub">Réinitialiser l'application</div></div>
+          <span style="font-size:16px;color:var(--red);">🗑</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <div class="nav-item active" onclick="showScreen('dashboard')">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+    </div>
+    <div class="nav-item" onclick="showScreen('add')">
+      <div class="nav-icon">➕</div>
+      <div class="nav-label">Ajouter</div>
+    </div>
+    <div class="nav-item" onclick="showScreen('timer')">
+      <div class="nav-icon">⏱️</div>
+      <div class="nav-label">Timer</div>
+    </div>
+    <div class="nav-item" onclick="showScreen('history')">
+      <div class="nav-icon">📊</div>
+      <div class="nav-label">Historique</div>
+    </div>
+    <div class="nav-item" onclick="showScreen('settings')">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">Profil</div>
+    </div>
+  </nav>
+
+  <div id="toast">✅ Séance enregistrée !</div>
+</div>
+
+<script>
+// ============================================================
+// STORE — LocalStorage
+// ============================================================
+const Store = {
+  get(key, def) {
+    try { const v = localStorage.getItem('fitmotion_'+key); return v ? JSON.parse(v) : def; } catch(e){ return def; }
+  },
+  set(key, val) {
+    try { localStorage.setItem('fitmotion_'+key, JSON.stringify(val)); } catch(e){}
+  }
+};
+
+// ============================================================
+// MET TABLE & CALORIE CALC
+// ============================================================
+const MET_TABLE = {
+  course:   { faible: 8,  moderee: 10, elevee: 12 },
+  velo:     { faible: 6,  moderee: 8,  elevee: 10 },
+  natation: { faible: 7,  moderee: 8.5,elevee: 10 },
+  muscu:    { faible: 4,  moderee: 5,  elevee: 6  },
+  pompes:   { faible: 6,  moderee: 8,  elevee: 9  },
+  gainage:  { faible: 3,  moderee: 4,  elevee: 5  },
+  marche:   { faible: 3,  moderee: 4,  elevee: 5  },
+  autre:    { faible: 4,  moderee: 6,  elevee: 8  },
+};
+
+// Vitesses moyennes km/h selon intensité (pour estimer durée depuis distance)
+const SPEED_TABLE = {
+  course:   { faible: 8,  moderee: 10, elevee: 13 },
+  velo:     { faible: 15, moderee: 20, elevee: 28 },
+  natation: { faible: 1.5,moderee: 2,  elevee: 2.8 },
+  marche:   { faible: 4,  moderee: 5,  elevee: 6  },
+};
+
+// Calories par répétition (pompes, muscu)
+// Basé sur ~0.3-0.5 kcal par pompe selon le poids corporel
+function calPerRep(type, weight) {
+  if (type === 'pompes') return weight * 0.00478; // ~0.48 kcal/rep à 100kg
+  return 0;
+}
+
+function calcCalories(type, durationMin, intensity, weight, extras = {}) {
+  const met = (MET_TABLE[type] || MET_TABLE.autre)[intensity] || 6;
+
+  // --- POMPES : calcul basé sur reps si fourni ---
+  if (type === 'pompes' && extras.totalReps > 0) {
+    // Énergie mécanique par pompe + overhead métabolique
+    const kcalPerRep = weight * 0.00478;
+    const repCal = Math.round(extras.totalReps * kcalPerRep);
+    // On prend aussi la durée comme plancher MET
+    const durCal = Math.round(met * weight * (durationMin / 60));
+    return Math.max(repCal, durCal);
+  }
+
+  // --- GAINAGE : calcul purement temporel (MET) ---
+  if (type === 'gainage') {
+    // Si on a le total secondes (depuis les séries), on s'en sert
+    const secs = extras.totalSecs || durationMin * 60;
+    return Math.round(met * weight * (secs / 3600));
+  }
+
+  // --- MUSCULATION : basé sur volume (séries × reps × charge) ---
+  if (type === 'muscu' && extras.volume > 0) {
+    // Formule : ~0.05 kcal par kg soulevé (approximation standard)
+    const volumeCal = Math.round(extras.volume * 0.05);
+    const durCal = Math.round(met * weight * (durationMin / 60));
+    return Math.max(volumeCal, durCal);
+  }
+
+  // --- COURSE / VÉLO / NATATION / MARCHE : priorité distance si fournie ---
+  if (extras.distance > 0 && SPEED_TABLE[type]) {
+    // Durée réelle = distance / vitesse selon intensité
+    const speed = SPEED_TABLE[type][intensity];
+    const realHours = extras.distance / speed;
+    return Math.round(met * weight * realHours);
+  }
+
+  // --- Fallback classique : MET × poids × durée ---
+  return Math.round(met * weight * (durationMin / 60));
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+let settings = Store.get('settings', { poids:101, taille:188, age:30, goalCal:600, depl:20 });
+
+function loadSettings() {
+  document.getElementById('set-poids').value = settings.poids;
+  document.getElementById('set-taille').value = settings.taille;
+  document.getElementById('set-age').value = settings.age;
+  document.getElementById('set-goal-cal').value = settings.goalCal;
+  document.getElementById('set-depl').value = settings.depl;
+  updateProfileDisplay();
+}
+
+function saveSettings() {
+  settings.poids = +document.getElementById('set-poids').value || 101;
+  settings.taille = +document.getElementById('set-taille').value || 188;
+  settings.age = +document.getElementById('set-age').value || 30;
+  settings.goalCal = +document.getElementById('set-goal-cal').value || 600;
+  settings.depl = +document.getElementById('set-depl').value || 20;
+  Store.set('settings', settings);
+  updateProfileDisplay();
+  renderDashboard();
+}
+
+function updateProfileDisplay() {
+  const bmi = settings.poids / ((settings.taille/100)**2);
+  document.getElementById('bmi-val').textContent = bmi.toFixed(1);
+  document.getElementById('profile-stats-line').textContent =
+    `${settings.poids} kg | ${settings.taille} cm | IMC ${bmi.toFixed(1)}`;
+}
+
+// ============================================================
+// ACTIVITIES
+// ============================================================
+let activities = Store.get('activities', []);
+
+const ACT_ICONS = { course:'🏃', velo:'🚴', natation:'🏊', muscu:'🏋️', pompes:'💪', gainage:'🧱', marche:'🚶', autre:'⚡' };
+const ACT_COLORS = { course:'#ff7849', velo:'#4f9cf9', natation:'#00e5cc', muscu:'#9b7ffe', pompes:'#ff5252', gainage:'#2dd4a0', marche:'#4f9cf9', autre:'#ffb84f' };
+const ACT_NAMES = { course:'Course à pied', velo:'Vélo', natation:'Natation', muscu:'Musculation', pompes:'Pompes', gainage:'Gainage', marche:'Marche', autre:'Autre' };
+
+function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+
+// ============================================================
+// DYNAMIC FORM FIELDS
+// ============================================================
+
+// Templates HTML par type d'activité
+const FIELD_TEMPLATES = {
+  // Cardio avec distance + badge vitesse live
+  _cardio: (placeholder_dist, placeholder_dur) => `
+    <div class="form-group">
+      <label class="form-label">Distance (km)</label>
+      <input type="number" class="form-input" id="input-distance" placeholder="${placeholder_dist}" step="0.1" min="0" oninput="updateCalPreview()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Durée (min)</label>
+      <input type="number" class="form-input" id="input-duration" placeholder="${placeholder_dur}" min="1" oninput="updateCalPreview()">
+    </div>
+    <div id="speed-badge" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;" id="speed-icon">⚡</span>
+        <div>
+          <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;font-weight:500;">Vitesse moyenne</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px;" id="speed-pace">--</div>
+        </div>
+      </div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;" id="speed-value">--</div>
+    </div>`,
+
+  course: () => FIELD_TEMPLATES._cardio('ex: 10', 'ex: 55'),
+  velo:   () => FIELD_TEMPLATES._cardio('ex: 30', 'ex: 90'),
+  marche: () => FIELD_TEMPLATES._cardio('ex: 5',  'ex: 60'),
+
+  natation: () => `
+    <div class="form-group">
+      <label class="form-label">Distance (m ou km)</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" class="form-input" id="input-distance" placeholder="ex: 1500" style="flex:2" step="50" min="0" oninput="updateCalPreview()">
+        <select class="form-select" id="input-swim-unit" style="flex:1" onchange="updateCalPreview()">
+          <option value="m">mètres</option>
+          <option value="km">km</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Durée (min)</label>
+      <input type="number" class="form-input" id="input-duration" placeholder="ex: 45" min="1" oninput="updateCalPreview()">
+    </div>`,
+
+  // Pompes : séries × répétitions
+  pompes: () => `
+    <div class="form-group">
+      <label class="form-label">Séries & répétitions</label>
+      <div id="pompes-series-list"></div>
+      <button type="button" onclick="addSerie('pompes')" style="margin-top:8px;width:100%;padding:10px;background:var(--bg3);border:1.5px dashed var(--border);border-radius:var(--radius-sm);color:var(--text2);font-size:13px;cursor:pointer;">+ Ajouter une série</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Durée totale (min) <span style="color:var(--text3)">— optionnel</span></label>
+      <input type="number" class="form-input" id="input-duration" placeholder="ex: 20" min="1" oninput="updateCalPreview()">
+    </div>`,
+
+  // Gainage : séries × durée en secondes
+  gainage: () => `
+    <div class="form-group">
+      <label class="form-label">Séries de gainage</label>
+      <div id="gainage-series-list"></div>
+      <button type="button" onclick="addSerie('gainage')" style="margin-top:8px;width:100%;padding:10px;background:var(--bg3);border:1.5px dashed var(--border);border-radius:var(--radius-sm);color:var(--text2);font-size:13px;cursor:pointer;">+ Ajouter une série</button>
+    </div>`,
+
+  // Musculation : exercices avec séries × reps × charge
+  muscu: () => `
+    <div class="form-group">
+      <label class="form-label">Exercices</label>
+      <div id="muscu-exercises-list"></div>
+      <button type="button" onclick="addExercice()" style="margin-top:8px;width:100%;padding:10px;background:var(--bg3);border:1.5px dashed var(--border);border-radius:var(--radius-sm);color:var(--text2);font-size:13px;cursor:pointer;">+ Ajouter un exercice</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Durée totale (min)</label>
+      <input type="number" class="form-input" id="input-duration" placeholder="ex: 60" min="1" oninput="updateCalPreview()">
+    </div>`,
+
+  autre: () => `
+    <div class="form-group">
+      <label class="form-label">Durée (minutes)</label>
+      <input type="number" class="form-input" id="input-duration" placeholder="ex: 30" min="1" oninput="updateCalPreview()">
+    </div>`,
+};
+
+let pompesSeries = [{ reps: 15 }];
+let gainageSeries = [{ secs: 60 }];
+let muscuExercices = [{ nom: '', series: 3, reps: 10, charge: 0 }];
+
+function renderPompesSeries() {
+  const list = document.getElementById('pompes-series-list');
+  if (!list) return;
+  list.innerHTML = pompesSeries.map((s, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:var(--violet-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--violet-light);flex-shrink:0;">${i+1}</div>
+      <div style="flex:1;display:flex;align-items:center;gap:6px;">
+        <input type="number" value="${s.reps}" min="1" placeholder="Reps"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;padding:10px 12px;outline:none;"
+          oninput="pompesSeries[${i}].reps=+this.value||0;updateCalPreview()">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap;">pompes</span>
+      </div>
+      ${pompesSeries.length > 1 ? `<button type="button" onclick="removeSerie('pompes',${i})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">×</button>` : ''}
+    </div>`).join('');
+}
+
+function renderGainageSeries() {
+  const list = document.getElementById('gainage-series-list');
+  if (!list) return;
+  list.innerHTML = gainageSeries.map((s, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:var(--cyan-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--cyan);flex-shrink:0;">${i+1}</div>
+      <div style="flex:1;display:flex;align-items:center;gap:6px;">
+        <input type="number" value="${s.secs}" min="1" placeholder="Secondes"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;padding:10px 12px;outline:none;"
+          oninput="gainageSeries[${i}].secs=+this.value||0;updateCalPreview()">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap;">secondes</span>
+      </div>
+      ${gainageSeries.length > 1 ? `<button type="button" onclick="removeSerie('gainage',${i})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">×</button>` : ''}
+    </div>`).join('');
+  // Sync durée auto
+  const totalSecs = gainageSeries.reduce((s,x)=>s+(x.secs||0),0);
+  const durEl = document.getElementById('input-duration');
+  // pas de champ durée pour gainage, on utilise totalSecs directement
+  updateCalPreview();
+}
+
+function renderMuscuExercices() {
+  const list = document.getElementById('muscu-exercises-list');
+  if (!list) return;
+  list.innerHTML = muscuExercices.map((e, i) => `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <input type="text" value="${e.nom}" placeholder="Nom de l'exercice (ex: Squat)"
+          style="flex:1;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:8px 12px;outline:none;"
+          oninput="muscuExercices[${i}].nom=this.value">
+        ${muscuExercices.length > 1 ? `<button type="button" onclick="removeExercice(${i})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;">×</button>` : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Séries</div>
+          <input type="number" value="${e.series}" min="1"
+            style="width:100%;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;padding:8px 10px;outline:none;text-align:center;"
+            oninput="muscuExercices[${i}].series=+this.value||0;updateCalPreview()">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Reps</div>
+          <input type="number" value="${e.reps}" min="1"
+            style="width:100%;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;padding:8px 10px;outline:none;text-align:center;"
+            oninput="muscuExercices[${i}].reps=+this.value||0;updateCalPreview()">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Charge (kg)</div>
+          <input type="number" value="${e.charge}" min="0"
+            style="width:100%;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;padding:8px 10px;outline:none;text-align:center;"
+            oninput="muscuExercices[${i}].charge=+this.value||0;updateCalPreview()">
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:var(--text3);">
+        Volume : ${e.series * e.reps * e.charge} kg·reps total
+      </div>
+    </div>`).join('');
+}
+
+function addSerie(type) {
+  if (type === 'pompes') { pompesSeries.push({ reps: 15 }); renderPompesSeries(); }
+  else { gainageSeries.push({ secs: 60 }); renderGainageSeries(); }
+  updateCalPreview();
+}
+
+function removeSerie(type, i) {
+  if (type === 'pompes') { pompesSeries.splice(i,1); renderPompesSeries(); }
+  else { gainageSeries.splice(i,1); renderGainageSeries(); }
+  updateCalPreview();
+}
+
+function addExercice() {
+  muscuExercices.push({ nom:'', series:3, reps:10, charge:0 });
+  renderMuscuExercices();
+}
+
+function removeExercice(i) {
+  muscuExercices.splice(i,1);
+  renderMuscuExercices();
+}
+
+function getExtras(type) {
+  if (type === 'pompes') {
+    const totalReps = pompesSeries.reduce((s,x) => s+(x.reps||0), 0);
+    return { totalReps };
+  }
+  if (type === 'gainage') {
+    const totalSecs = gainageSeries.reduce((s,x) => s+(x.secs||0), 0);
+    return { totalSecs };
+  }
+  if (type === 'muscu') {
+    const volume = muscuExercices.reduce((s,e) => s + (e.series*e.reps*e.charge), 0);
+    return { volume };
+  }
+  const dist = +document.getElementById('input-distance')?.value || 0;
+  if (type === 'natation') {
+    const unit = document.getElementById('input-swim-unit')?.value || 'm';
+    return { distance: unit === 'm' ? dist / 1000 : dist };
+  }
+  return { distance: dist };
+}
+
+function getDuration(type) {
+  if (type === 'gainage') {
+    // Durée auto depuis les séries
+    return Math.ceil(gainageSeries.reduce((s,x)=>s+(x.secs||0),0) / 60) || 1;
+  }
+  return +document.getElementById('input-duration')?.value || 0;
+}
+
+function selectType(el) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const type = el.dataset.type;
+
+  // Reset series/exercices state
+  pompesSeries = [{ reps: 15 }];
+  gainageSeries = [{ secs: 60 }];
+  muscuExercices = [{ nom:'', series:3, reps:10, charge:0 }];
+
+  const tpl = FIELD_TEMPLATES[type] || FIELD_TEMPLATES.autre;
+  document.getElementById('dynamic-fields').innerHTML = tpl();
+
+  if (type === 'pompes')  renderPompesSeries();
+  if (type === 'gainage') renderGainageSeries();
+  if (type === 'muscu')   renderMuscuExercices();
+
+  updateCalPreview();
+}
+
+function selectIntensity(el) {
+  document.querySelectorAll('.int-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  updateCalPreview();
+}
+
+// ============================================================
+// CALORIE PREVIEW (live)
+// ============================================================
+function updateCalPreview() {
+  const type = document.querySelector('.type-btn.selected')?.dataset.type || 'course';
+  const intensity = document.querySelector('.int-btn.selected')?.dataset.int || 'moderee';
+  const dur = getDuration(type);
+  const extras = getExtras(type);
+  const met = (MET_TABLE[type] || MET_TABLE.autre)[intensity];
+
+  // --- BADGE VITESSE (course / vélo / marche) ---
+  const speedBadge = document.getElementById('speed-badge');
+  if (speedBadge && ['course','velo','marche'].includes(type)) {
+    const dist = extras.distance || 0;
+    const durVal = +document.getElementById('input-duration')?.value || 0;
+    if (dist > 0 && durVal > 0) {
+      const speed = (dist / (durVal / 60)); // km/h
+      const paceMin = Math.floor(60 / speed);
+      const paceSec = Math.round((60 / speed - paceMin) * 60);
+      const paceStr = `${paceMin}'${paceSec.toString().padStart(2,'0')}" /km`;
+
+      // Couleur et icône selon la vitesse
+      let color = 'var(--text2)', icon = '🚶';
+      if (type === 'course') {
+        if (speed >= 14)      { color = 'var(--orange)'; icon = '🔥'; }
+        else if (speed >= 11) { color = 'var(--violet-light)'; icon = '🏃'; }
+        else if (speed >= 8)  { color = 'var(--blue)'; icon = '🏃'; }
+        else                  { color = 'var(--green)'; icon = '🚶'; }
+      } else if (type === 'velo') {
+        if (speed >= 35)      { color = 'var(--orange)'; icon = '🔥'; }
+        else if (speed >= 25) { color = 'var(--violet-light)'; icon = '🚴'; }
+        else if (speed >= 18) { color = 'var(--blue)'; icon = '🚴'; }
+        else                  { color = 'var(--green)'; icon = '🚲'; }
+      } else {
+        color = 'var(--green)'; icon = '🚶';
+      }
+
+      document.getElementById('speed-value').textContent = speed.toFixed(1) + ' km/h';
+      document.getElementById('speed-value').style.color = color;
+      document.getElementById('speed-pace').textContent = type !== 'velo' ? `Allure : ${paceStr}` : ``;
+      document.getElementById('speed-icon').textContent = icon;
+      speedBadge.style.display = 'flex';
+      speedBadge.style.borderColor = color + '55';
+    } else {
+      speedBadge.style.display = 'none';
+    }
+  } else if (speedBadge) {
+    speedBadge.style.display = 'none';
+  }
+
+  let cal = 0, formulaStr = '';
+
+  if (type === 'pompes' && extras.totalReps > 0) {
+    const kcalPerRep = (settings.poids * 0.00478).toFixed(3);
+    cal = calcCalories(type, dur, intensity, settings.poids, extras);
+    const nbSeries = pompesSeries.length;
+    formulaStr = `${nbSeries} série(s) · ${extras.totalReps} reps × ${kcalPerRep} kcal/rep`;
+  } else if (type === 'gainage' && extras.totalSecs > 0) {
+    cal = calcCalories(type, dur, intensity, settings.poids, extras);
+    const mins = Math.floor(extras.totalSecs/60), secs = extras.totalSecs%60;
+    formulaStr = `MET ${met} × ${settings.poids}kg × ${mins}m${secs}s`;
+  } else if (type === 'muscu' && extras.volume > 0) {
+    cal = calcCalories(type, dur, intensity, settings.poids, extras);
+    formulaStr = `Volume ${extras.volume} kg·reps × 0.05 kcal`;
+  } else if (extras.distance > 0 && SPEED_TABLE[type]) {
+    const durVal = +document.getElementById('input-duration')?.value || 0;
+    if (extras.distance > 0 && durVal > 0) {
+      // On a les deux : on utilise la durée réelle pour le MET
+      cal = Math.round(met * settings.poids * (durVal / 60));
+      const speed = (extras.distance / (durVal / 60)).toFixed(1);
+      formulaStr = `MET ${met} × ${settings.poids}kg × ${durVal}min · ${speed} km/h`;
+    } else {
+      cal = calcCalories(type, dur, intensity, settings.poids, extras);
+      const speed = SPEED_TABLE[type][intensity];
+      const realMin = Math.round((extras.distance / speed) * 60);
+      formulaStr = `${extras.distance} km ÷ ${speed} km/h = ~${realMin} min · MET ${met}`;
+    }
+  } else if (dur > 0) {
+    cal = calcCalories(type, dur, intensity, settings.poids, extras);
+    formulaStr = `MET ${met} × ${settings.poids}kg × ${(dur/60).toFixed(2)}h`;
+  } else {
+    document.getElementById('cal-preview').textContent = '--';
+    document.getElementById('cal-formula').textContent = 'Renseignez vos données';
+    return;
+  }
+
+  document.getElementById('cal-preview').textContent = cal;
+  document.getElementById('cal-formula').textContent = formulaStr;
+}
+
+// ============================================================
+// SAVE ACTIVITY
+// ============================================================
+function saveActivity() {
+  const type = document.querySelector('.type-btn.selected')?.dataset.type || 'course';
+  const intensity = document.querySelector('.int-btn.selected')?.dataset.int || 'moderee';
+  const dur = getDuration(type);
+  const extras = getExtras(type);
+  const notes = document.getElementById('input-notes').value;
+
+  // Validation selon type
+  if (type === 'pompes') {
+    const totalReps = pompesSeries.reduce((s,x)=>s+(x.reps||0),0);
+    if (totalReps < 1) { showToast('⚠️ Entrez au moins 1 répétition'); return; }
+  } else if (type === 'gainage') {
+    const totalSecs = gainageSeries.reduce((s,x)=>s+(x.secs||0),0);
+    if (totalSecs < 1) { showToast('⚠️ Entrez au moins 1 seconde'); return; }
+  } else if (type === 'muscu') {
+    if (!dur || dur < 1) { showToast('⚠️ Entrez la durée de la séance'); return; }
+  } else {
+    const hasDist = extras.distance > 0;
+    const hasDur  = dur > 0;
+    if (!hasDist && !hasDur) { showToast('⚠️ Entrez une distance ou une durée'); return; }
+  }
+
+  const cal = calcCalories(type, dur || getDuration(type), intensity, settings.poids, extras);
+
+  // Build detail string for history display
+  let detail = '';
+  if (type === 'pompes') {
+    detail = pompesSeries.map((s,i)=>`S${i+1}: ${s.reps} reps`).join(' · ');
+    extras._seriesDetail = detail;
+  } else if (type === 'gainage') {
+    detail = gainageSeries.map((s,i)=>`S${i+1}: ${s.secs}s`).join(' · ');
+    extras._seriesDetail = detail;
+  } else if (type === 'muscu') {
+    detail = muscuExercices.filter(e=>e.nom||e.charge>0).map(e=>`${e.nom||'Ex'} ${e.series}×${e.reps}${e.charge?' @'+e.charge+'kg':''}`).join(' · ');
+    extras._seriesDetail = detail;
+  }
+
+  const act = {
+    id: Date.now(),
+    date: getTodayStr(),
+    type,
+    duration: dur || 1,
+    distance: extras.distance || 0,
+    intensity,
+    notes,
+    calories: cal,
+    extras: { ...extras }
+  };
+  activities.unshift(act);
+  Store.set('activities', activities);
+
+  // Reset form
+  document.getElementById('input-notes').value = '';
+  document.getElementById('cal-preview').textContent = '--';
+  document.getElementById('cal-formula').textContent = 'Renseignez vos données';
+  pompesSeries = [{ reps: 15 }];
+  gainageSeries = [{ secs: 60 }];
+  muscuExercices = [{ nom:'', series:3, reps:10, charge:0 }];
+
+  showToast(`🔥 +${cal} kcal enregistrées !`);
+  renderDashboard();
+  renderHistory();
+  showScreen('dashboard');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const today = getTodayStr();
+  const todayActs = activities.filter(a => a.date === today);
+  const totalCal = todayActs.reduce((s,a) => s+a.calories, 0);
+  const totalDur = todayActs.reduce((s,a) => s+a.duration, 0);
+  const goal = settings.goalCal;
+  const pct = Math.min(100, Math.round((totalCal/goal)*100));
+
+  // Ring
+  const circ = 477.5;
+  const offset = circ - (circ * pct / 100);
+  document.getElementById('dash-ring').style.strokeDashoffset = offset;
+  document.getElementById('dash-pct').textContent = pct + '%';
+  document.getElementById('dash-cal-val').textContent = totalCal;
+  document.getElementById('dash-cal-goal').textContent = `/ ${goal} kcal`;
+
+  // Metrics
+  document.getElementById('dash-activities').textContent = todayActs.length;
+  document.getElementById('dash-duration').innerHTML = `${totalDur}<span class="metric-unit">min</span>`;
+
+  // BMI
+  const bmi = settings.poids / ((settings.taille/100)**2);
+  document.getElementById('bmi-val').textContent = bmi.toFixed(1);
+
+  // Date
+  const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const d = new Date();
+  document.getElementById('dash-date').textContent = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+
+  // Today activities
+  const cont = document.getElementById('today-activities');
+  if (todayActs.length === 0) {
+    cont.innerHTML = `<div class="empty-state"><div class="empty-icon">💪</div><div class="empty-text">Aucune séance aujourd'hui<br>C'est l'heure de bouger !</div></div>`;
+  } else {
+    cont.innerHTML = todayActs.map(a => activityHTML(a)).join('');
+  }
+
+  // Week chart
+  renderWeekChart();
+
+  // Triathlon
+  renderTriathlon();
+
+  // Suggestions
+  renderSuggestions();
+}
+
+function activityHTML(a) {
+  const color = ACT_COLORS[a.type] || '#7c5cfc';
+  const icon = ACT_ICONS[a.type] || '⚡';
+  const name = ACT_NAMES[a.type] || 'Activité';
+  const intLabels = { faible:'Faible', moderee:'Modérée', elevee:'Élevée' };
+
+  // Build contextual meta line
+  let meta = '';
+  const ex = a.extras || {};
+  if (a.type === 'pompes' && ex.totalReps > 0) {
+    meta = `${ex.totalReps} reps`;
+    if (ex._seriesDetail) meta += ` · ${ex._seriesDetail}`;
+  } else if (a.type === 'gainage' && ex.totalSecs > 0) {
+    const m = Math.floor(ex.totalSecs/60), s = ex.totalSecs%60;
+    meta = `${m}min ${s}s`;
+    if (ex._seriesDetail) meta += ` · ${ex._seriesDetail}`;
+  } else if (a.type === 'muscu') {
+    meta = `${a.duration} min`;
+    if (ex._seriesDetail) meta += ` · ${ex._seriesDetail}`;
+  } else {
+    meta = a.distance > 0 ? `${a.distance} km` : '';
+    if (a.duration > 0) meta += (meta ? ' · ' : '') + `${a.duration} min`;
+  }
+  meta += ` · ${intLabels[a.intensity]||''}`;
+
+  return `<div class="activity-item">
+    <div class="activity-icon-wrap" style="background:${color}22;">${icon}</div>
+    <div class="activity-info">
+      <div class="activity-name">${name}</div>
+      <div class="activity-meta">${meta}</div>
+    </div>
+    <div class="activity-cal">${a.calories} <span style="font-size:11px;font-weight:400;color:var(--text2)">kcal</span></div>
+  </div>`;
+}
+
+function renderWeekChart() {
+  const chart = document.getElementById('week-chart');
+  const badge = document.getElementById('week-total-badge');
+  const now = new Date();
+  const dayNames = ['D','L','M','M','J','V','S'];
+  let bars = [];
+  let weekTotal = 0;
+  let maxCal = 1;
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    const cal = activities.filter(a => a.date === ds).reduce((s,a) => s+a.calories, 0);
+    weekTotal += cal;
+    maxCal = Math.max(maxCal, cal);
+    bars.push({ cal, day: dayNames[d.getDay()], isToday: i===0 });
+  }
+
+  badge.textContent = weekTotal + ' kcal';
+  chart.innerHTML = bars.map(b => {
+    const h = Math.round((b.cal / maxCal) * 64) || 4;
+    return `<div class="week-bar-wrap">
+      <div class="week-bar ${b.isToday?'today':''}" style="height:${h}px;" title="${b.cal} kcal"></div>
+      <div class="week-bar-label">${b.day}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTriathlon() {
+  const now = new Date();
+  const week = [];
+  for (let i=6;i>=0;i--) { const d=new Date(now); d.setDate(d.getDate()-i); week.push(d.toISOString().split('T')[0]); }
+  const wActs = activities.filter(a => week.includes(a.date));
+  const swim = wActs.filter(a=>a.type==='natation').reduce((s,a)=>s+a.duration,0);
+  const bike = wActs.filter(a=>a.type==='velo').reduce((s,a)=>s+a.duration,0);
+  const run  = wActs.filter(a=>a.type==='course').reduce((s,a)=>s+a.duration,0);
+  document.getElementById('tri-swim').textContent = swim + ' min';
+  document.getElementById('tri-bike').textContent = bike + ' min';
+  document.getElementById('tri-run').textContent  = run  + ' min';
+}
+
+const SUGGESTIONS = [
+  { icon:'🧱', color:'#2dd4a0', title:'Gainage 3×60s', meta:'Quotidien · 10 min · ~45 kcal', type:'gainage', duration:10, intensity:'moderee' },
+  { icon:'💪', color:'#9b7ffe', title:'50 Pompes', meta:'Quotidien · 15 min · ~90 kcal', type:'pompes', duration:15, intensity:'elevee' },
+  { icon:'🏊', color:'#00e5cc', title:'Natation technique', meta:'Triathlon · 45 min · ~380 kcal', type:'natation', duration:45, intensity:'moderee' },
+  { icon:'🚴', color:'#4f9cf9', title:'Sortie vélo endurance', meta:'Triathlon · 60 min · ~480 kcal', type:'velo', duration:60, intensity:'moderee' },
+  { icon:'🏃', color:'#ff7849', title:'Fartlek 30 min', meta:'Triathlon · 30 min · ~360 kcal', type:'course', duration:30, intensity:'elevee' },
+];
+
+function renderSuggestions() {
+  const today = getTodayStr();
+  const doneTypes = activities.filter(a=>a.date===today).map(a=>a.type);
+  const list = document.getElementById('suggestions-list');
+  const show = SUGGESTIONS.filter(s => !doneTypes.includes(s.type)).slice(0, 3);
+  list.innerHTML = show.map(s => `
+    <div class="suggestion-card" style="margin-bottom:8px;" onclick="quickAddSuggestion('${s.type}',${s.duration},'${s.intensity}')">
+      <div class="sug-icon" style="background:${s.color}22;">${s.icon}</div>
+      <div class="sug-body">
+        <div class="sug-title">${s.title}</div>
+        <div class="sug-meta">${s.meta}</div>
+      </div>
+      <div class="sug-arrow">›</div>
+    </div>`).join('') || `<div style="font-size:13px;color:var(--text3);padding:8px 0;">Toutes les suggestions complétées ! 🎉</div>`;
+}
+
+function quickAddSuggestion(type, duration, intensity) {
+  const cal = calcCalories(type, duration, intensity, settings.poids);
+  const act = { id:Date.now(), date:getTodayStr(), type, duration, distance:0, intensity, notes:'Suggestion auto', calories:cal };
+  activities.unshift(act);
+  Store.set('activities', activities);
+  showToast(`🔥 +${cal} kcal — ${ACT_NAMES[type]} ajouté !`);
+  renderDashboard();
+  renderHistory();
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+let currentFilter = 'all';
+
+function filterHistory(el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter = el.dataset.filter;
+  renderHistory();
+}
+
+function renderHistory() {
+  const filtered = currentFilter === 'all' ? activities : activities.filter(a => a.type === currentFilter);
+  const list = document.getElementById('history-list');
+
+  document.getElementById('hist-total-cal').textContent = filtered.reduce((s,a)=>s+a.calories,0);
+  document.getElementById('hist-total-sessions').textContent = filtered.length;
+  document.getElementById('hist-total-min').textContent = filtered.reduce((s,a)=>s+a.duration,0);
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Aucune activité<br>dans cette catégorie</div></div>`;
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  filtered.forEach(a => { if (!byDate[a.date]) byDate[a.date]=[];  byDate[a.date].push(a); });
+
+  list.innerHTML = Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date, acts]) => {
+    const d = new Date(date);
+    const months = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+    const dateLabel = `${d.getDate()} ${months[d.getMonth()]}`;
+    const dayTotal = acts.reduce((s,a)=>s+a.calories,0);
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);">${dateLabel}</div>
+        <div style="font-size:12px;color:var(--orange);font-weight:600;">🔥 ${dayTotal} kcal</div>
+      </div>
+      <div class="card">${acts.map(a=>activityHTML(a)).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+let timerDuration = 60;
+let timerRemaining = 60;
+let timerRunning = false;
+let timerInterval = null;
+let timerSessions = Store.get('timer_sessions', []);
+
+function formatTime(s) {
+  const m = Math.floor(s/60).toString().padStart(2,'0');
+  const sec = (s%60).toString().padStart(2,'0');
+  return `${m}:${sec}`;
+}
+
+function updateTimerRing() {
+  const circ = 653.5;
+  const pct = timerRemaining / timerDuration;
+  const offset = circ - (circ * pct);
+  document.getElementById('timer-ring').style.strokeDashoffset = offset;
+}
+
+function updateTimerDisplay() {
+  document.getElementById('timer-display').textContent = formatTime(timerRemaining);
+  updateTimerRing();
+}
+
+function setPreset(el) {
+  if (timerRunning) return;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  timerDuration = +el.dataset.secs;
+  timerRemaining = timerDuration;
+  updateTimerDisplay();
+  document.getElementById('timer-status').textContent = 'Prêt';
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('btn-start-pause').textContent = 'Reprendre';
+    document.getElementById('btn-start-pause').className = 'timer-btn timer-btn-start';
+    document.getElementById('timer-status').textContent = 'En pause';
+    document.getElementById('timer-display').classList.remove('pulsing');
+  } else {
+    if (timerRemaining === 0) { timerRemaining = timerDuration; }
+    timerRunning = true;
+    document.getElementById('btn-start-pause').textContent = 'Pause';
+    document.getElementById('btn-start-pause').className = 'timer-btn timer-btn-pause';
+    document.getElementById('timer-status').textContent = 'En cours...';
+    document.getElementById('timer-display').classList.add('pulsing');
+    timerInterval = setInterval(() => {
+      timerRemaining--;
+      updateTimerDisplay();
+      if (timerRemaining <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('timer-display').classList.remove('pulsing');
+        completeTimer();
+      }
+    }, 1000);
+  }
+  updateTimerDisplay();
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerRemaining = timerDuration;
+  document.getElementById('btn-start-pause').textContent = 'Démarrer';
+  document.getElementById('btn-start-pause').className = 'timer-btn timer-btn-start';
+  document.getElementById('timer-status').textContent = 'Prêt';
+  document.getElementById('timer-display').classList.remove('pulsing');
+  updateTimerDisplay();
+}
+
+function completeTimer() {
+  document.getElementById('btn-start-pause').textContent = 'Recommencer';
+  document.getElementById('btn-start-pause').className = 'timer-btn timer-btn-start';
+  document.getElementById('timer-status').textContent = '✅ Terminé !';
+
+  // Save as gainage session
+  const session = { duration: timerDuration, date: getTodayStr(), time: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) };
+  timerSessions.unshift(session);
+  if (timerSessions.length > 10) timerSessions.pop();
+  Store.set('timer_sessions', timerSessions);
+
+  // Auto-save activity
+  const cal = calcCalories('gainage', Math.round(timerDuration/60), 'moderee', settings.poids);
+  const act = { id:Date.now(), date:getTodayStr(), type:'gainage', duration:Math.round(timerDuration/60)||1, distance:0, intensity:'moderee', notes:`Timer: ${formatTime(timerDuration)}`, calories:Math.max(cal,1) };
+  activities.unshift(act);
+  Store.set('activities', activities);
+
+  showToast(`🧱 Gainage ${formatTime(timerDuration)} enregistré !`);
+  renderTimerStats();
+  renderDashboard();
+}
+
+function renderTimerStats() {
+  if (timerSessions.length === 0) return;
+  const best = Math.max(...timerSessions.map(s=>s.duration));
+  document.getElementById('timer-best').textContent = formatTime(best);
+  document.getElementById('timer-count').textContent = timerSessions.length;
+  document.getElementById('timer-log').innerHTML = timerSessions.slice(0,5).map(s =>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span>🧱 ${formatTime(s.duration)}</span>
+      <span style="color:var(--text3)">${s.date} ${s.time}</span>
+    </div>`
+  ).join('');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const screenMap = { dashboard:0, add:1, timer:2, history:3, settings:4 };
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item')[screenMap[name]]?.classList.add('active');
+
+  if (name === 'history') renderHistory();
+  if (name === 'settings') loadSettings();
+  if (name === 'timer') renderTimerStats();
+  if (name === 'dashboard') renderDashboard();
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ============================================================
+// MISC
+// ============================================================
+function clearAllData() {
+  if (confirm('Effacer toutes les données ?')) {
+    activities = [];
+    timerSessions = [];
+    Store.set('activities', []);
+    Store.set('timer_sessions', []);
+    renderDashboard();
+    renderHistory();
+    showToast('🗑 Données effacées');
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(function init() {
+  loadSettings();
+
+  // Render default form fields (course selected by default)
+  document.getElementById('dynamic-fields').innerHTML = FIELD_TEMPLATES.course();
+
+  renderDashboard();
+  updateTimerDisplay();
+
+  // Seed demo data if empty
+  if (activities.length === 0) {
+    const today = getTodayStr();
+    const y1 = new Date(); y1.setDate(y1.getDate()-1); const yd = y1.toISOString().split('T')[0];
+    const y2 = new Date(); y2.setDate(y2.getDate()-2); const y2d = y2.toISOString().split('T')[0];
+
+    const demo = [
+      { id:1, date:today, type:'pompes', duration:20, distance:0, intensity:'elevee', notes:'Série du matin',
+        extras:{ totalReps:100, _seriesDetail:'S1: 30 reps · S2: 30 reps · S3: 25 reps · S4: 15 reps' },
+        calories: calcCalories('pompes',20,'elevee',settings.poids,{totalReps:100}) },
+      { id:2, date:today, type:'gainage', duration:5, distance:0, intensity:'moderee', notes:'3 planches',
+        extras:{ totalSecs:180, _seriesDetail:'S1: 60s · S2: 60s · S3: 60s' },
+        calories: calcCalories('gainage',5,'moderee',settings.poids,{totalSecs:180}) },
+      { id:3, date:yd, type:'velo', duration:54, distance:18, intensity:'moderee', notes:'Sortie cool',
+        extras:{ distance:18 },
+        calories: calcCalories('velo',54,'moderee',settings.poids,{distance:18}) },
+      { id:4, date:yd, type:'course', duration:30, distance:5, intensity:'elevee', notes:'Interval training',
+        extras:{ distance:5 },
+        calories: calcCalories('course',30,'elevee',settings.poids,{distance:5}) },
+      { id:5, date:y2d, type:'natation', duration:45, distance:1.5, intensity:'moderee', notes:'Technique bras',
+        extras:{ distance:1.5 },
+        calories: calcCalories('natation',45,'moderee',settings.poids,{distance:1.5}) },
+      { id:6, date:y2d, type:'muscu', duration:60, distance:0, intensity:'elevee', notes:'Push day',
+        extras:{ volume:4500, _seriesDetail:'Développé couché 4×10 @80kg · Squat 4×8 @100kg · Tractions 3×8' },
+        calories: calcCalories('muscu',60,'elevee',settings.poids,{volume:4500}) },
+    ];
+    activities = demo;
+    Store.set('activities', activities);
+    renderDashboard();
+    renderHistory();
+  }
+})();
+</script>
+</body>
+</html>
